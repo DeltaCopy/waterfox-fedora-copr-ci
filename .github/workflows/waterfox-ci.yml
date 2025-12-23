@@ -15,7 +15,7 @@ env:
   POLICIES: $GITHUB_WORKSPACE/policies.json
   APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
 jobs:
-  freetube-copr-ci:
+  waterfox-copr-ci:
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
