@@ -64,11 +64,18 @@ jobs:
           echo "rpm_file = $rpm_file"
           source /etc/os-release
           echo "Version ID = $VERSION_ID"
-          mv $rpm_file $HOME/rpmbuild/RPMS/x86_64/waterfox-${{ inputs.version }}.fc$VERSION_ID.x86_64.rpm
-          echo "RPM_ASSET=$HOME/rpmbuild/RPMS/x86_64/waterfox-${{ inputs.version }}.fc$VERSION_ID.x86_64.rpm" >> "$GITHUB_ENV"
-      - name: Release
-        uses: softprops/action-gh-release@v2.0.8
-        if: startsWith(github.ref, 'refs/tags/')
+          publish_filename=waterfox-${{ inputs.version }}.fc$VERSION_ID.x86_64.rpm
+          echo "Moving file to $GITHUB_WORKSPACE/$publish_filename"
+          mv $artifact $GITHUB_WORKSPACE/$publish_filename
+          echo "ARTIFACT=$publish_filename" >> "$GITHUB_ENV"
+          SHA256SUM=$(sha256sum $GITHUB_WORKSPACE/$publish_filename | awk '{ print $1 }')
+          echo "ARTIFACT = $publish_filename | SHA256SUM = $SHA256SUM"
+          echo "SHA256SUM=$SHA256SUM" >> "$GITHUB_ENV"
+      - name: Publish RPM
+        if: ${{ env.SHA256SUM != '' }}
+        uses: actions/upload-artifact@v5
         with:
-          files: ${{ env.RPM_ASSET }}
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
+          retention-days: 1
 
