@@ -1,28 +1,34 @@
 # Build Waterfox and publish release
-name: Waterfox build & release
+name: FreeTube Fedora COPR build
 on: workflow_dispatch
 env:
+  COPR_PROJECT: waterfox
+  COPR_USERNAME: deltacopy
+  COPR_URL: https://copr.fedorainfracloud.org
   REPO_DEV: BrowserWorks
   REPO_NAME: waterfox
   RELEASES_CDN: https://cdn1.waterfox.net/waterfox/releases/${version}/Linux_x86_64/waterfox-${version}.tar.bz2
+  SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
+  VENDOR: $GITHUB_WORKSPACE/vendor.js
+  DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
+  DISTR: $GITHUB_WORKSPACE/distribution.ini
+  POLICIES: $GITHUB_WORKSPACE/policies.json
+  APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
 jobs:
-  release-ci:
-    runs-on: ubuntu-24.04
-    outputs:
-      VERSION: ${{ steps.step_getlatest_tag.outputs.VERSION }}
-      ASSET: ${{ steps.step_get_asset.outputs.ASSET }}
+  freetube-copr-ci:
+    runs-on: ubuntu-latest
+    container: fedora:latest
     steps:
       - name: Checkout local
         uses: actions/checkout@v4.2.0
         with:
           repository: ${{ github.repository }}
-          sparse-checkout: |
-            .github/workflows
+          sparse-checkout-cone-mode: false
 
-      - name: Install build dependencies
-        run: sudo apt-get install git -y -qq
-      - name: Get latest Waterfox release tag
-        id: step_getlatest_tag
+      - name: Install dependencies
+        run: sudo dnf install -y -q copr-cli python3 git gawk
+
+      - name: Get latest tag
         run: |
           # get latest release tag from remote
 
@@ -33,36 +39,41 @@ jobs:
           || echo "ERROR: Latest tag not found" || exit 1
 
           echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
-      - name: Download tag asset
-        id: step_get_asset
+
+          sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
+
+      - name: Update copr-cli configuration
         run: |
-          CDN=$(echo $RELEASES_CDN | sed -e 's/${version}/${{ env.LATEST_TAG }}/g' -e 's/-${version}/${{ env.LATEST_TAG }}/g')
-          echo "Release CDN release link = $CDN"
-          curl -LO $CDN
-          echo "ASSET=waterfox-${{ env.LATEST_TAG }}.tar.bz2" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache/save@v4
-        id: cache
-        with:
-          path: ${{ steps.step_get_asset.outputs.ASSET }}
-          key: ${{ runner.os }}-waterfox-${{ steps.step_getlatest_tag.outputs.VERSION }}-${{ hashFiles(steps.step_get_asset.outputs.ASSET) }}
-      - name: Save version
-        run: echo ${{ steps.step_get_artifact.outputs.VERSION }} > VERSION
-      - name: Upload version
-        uses: actions/upload-artifact@v5
-        with:
-          name: VERSION
-          path: VERSION
-          retention-days: 1
+          mkdir $HOME/.config
+          cat <<EOF > $HOME/.config/copr
+          [copr-cli]
+          login = ${{ secrets.COPR_BUILD_L }}
+          username = ${{ env.COPR_USERNAME }}
+          token = ${{ secrets.COPR_BUILD_T }}
+          copr_url = ${{ env.COPR_URL }}
+          EOF
+      - name: Get latest COPR build information
+        run: |
+          LATEST_COPR=$(copr-cli get-package ${{ env.COPR_USERNAME }}/${{ env.COPR_PROJECT }} --name ${{ env.COPR_PROJECT }} | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj["latest_build"]["source_package"]["version"]);')
 
-  Fedora:
-    needs: release-ci
-    uses: ./.github/workflows/fedora.yml
-    with:
-      cache-file-path: ${{ needs.release-ci.outputs.ASSET }}
-      version: ${{ needs.release-ci.outputs.VERSION }}
-      containers: "['fedora:42']"
+          echo "Latest COPR version = ${LATEST_COPR%-*}"
+          echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
 
-  release:
-    uses: ./.github/workflows/release.yml
-    needs: ["fedora"]
+          # convert the versions removing the decimal points to ease in comparing them
 
+          copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+          git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+
+          if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
+              echo "START_BUILD=true" >> "$GITHUB_ENV"
+              echo "Starting COPR build"
+          else
+              echo "START_BUILD=false" >> "$GITHUB_ENV"
+              echo "Skipping COPR build"
+          fi
+
+      - name: Start COPR build
+        if: env.START_BUILD == 'true'
+        run: |
+          echo "Starting COPR build"
+          copr-cli build ${{ env.COPR_PROJECT }} ${{ env.SPEC_FILE }}
