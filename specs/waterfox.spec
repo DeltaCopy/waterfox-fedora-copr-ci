@@ -1,7 +1,7 @@
 %define app waterfox
 %define dev BrowserWorks
 %define appdir %{_prefix}/%_lib/%{app}
-%define release_tag 6.6.7
+%define release_tag ${TAG} # this line gets updated automatically by Github Actions
 %define debug_package %{nil}
 
 Name: %{app}
