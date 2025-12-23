@@ -47,7 +47,7 @@ jobs:
       - name: Create rpm tree
         run: rpmdev-setuptree
       - name: Move tarball asset to rpm build sources location
-        run: mv ${{ inputs.cache-file-path }} $HOME/rpmbuild/SOURCES/${{ inputs.version }}.tar.bz2
+        run: mv ${{ inputs.cache-file-path }} $HOME/rpmbuild/SOURCES/waterfox-${{ inputs.version }}.tar.bz2
       - name: Move rpm assets to rpmbuild dir
         run: |
           mv ${{ env.SPEC }} $HOME/rpmbuild/SPECS/
