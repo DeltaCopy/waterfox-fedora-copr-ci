@@ -4,6 +4,7 @@ on: workflow_dispatch
 env:
   REPO_DEV: BrowserWorks
   REPO_NAME: waterfox
+  RELEASES_CDN: https://cdn1.waterfox.net/waterfox/releases/${version}/Linux_x86_64/waterfox-${version}.tar.bz2
 jobs:
   release-ci:
     runs-on: ubuntu-24.04
@@ -38,13 +39,23 @@ jobs:
       - name: Download tag asset
         id: step_get_asset
         run: |
-          curl -L https://github.com/$REPO_DEV/$REPO_NAME/archive/refs/tags/${{ env.LATEST_TAG }}.tar.gz --output waterfox-${{ env.LATEST_TAG }}.tar.gz
-          echo "ASSET=waterfox-${{ env.LATEST_TAG }}.tar.gz" >> "$GITHUB_OUTPUT"
+          CDN=$(echo $RELEASES_CDN | sed -e 's/${version}/TEST/g' -e 's/-${version}/TEST/g')
+          echo "Release CDN release link = $CDN"
+          curl -L $CDN --output waterfox-${{ env.LATEST_TAG }}.tar.bz2
+          echo "ASSET=waterfox-${{ env.LATEST_TAG }}.tar.bz" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/save@v4
         id: cache
         with:
           path: ${{ steps.step_get_asset.outputs.ASSET }}
           key: ${{ runner.os }}-v${{ steps.step_getlatest_tag.outputs.VERSION }}-${{ hashFiles(steps.step_get_asset.outputs.ASSET) }}
+      - name: Save version
+        run: echo ${{ steps.step_get_artifact.outputs.VERSION }} > VERSION
+      - name: Upload version
+        uses: actions/upload-artifact@v5
+        with:
+          name: VERSION
+          path: VERSION
+          retention-days: 1
 
   Fedora:
     needs: release-ci
@@ -53,3 +64,9 @@ jobs:
       cache-file-path: ${{ needs.release-ci.outputs.ASSET }}
       version: ${{ needs.release-ci.outputs.VERSION }}
       containers: "['fedora:42']"
+
+  release:
+    uses: ./.github/workflows/release.yml
+    needs: ["fedora"]
+
+    

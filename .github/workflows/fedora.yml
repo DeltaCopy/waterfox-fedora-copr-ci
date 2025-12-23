@@ -14,11 +14,12 @@ on:
         required: true
         type: string
 env:
-  SPEC_FILE: $GITHUB_WORKSPACE/waterfox.spec
-  VENDOR_FILE: $GITHUB_WORKSPACE/vendor.js
-  DESKTOP_FILE: $GITHUB_WORKSPACE/waterfox.desktop
-  DISTR_FILE: $GITHUB_WORKSPACE/distribution.ini
-  RELEASE_TAG: $GITHUB_WORKSPACE/release_tag.txt
+  SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
+  VENDOR: $GITHUB_WORKSPACE/vendor.js
+  DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
+  DISTR: $GITHUB_WORKSPACE/distribution.ini
+  POLICIES: $GITHUB_WORKSPACE/policies.json
+  APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
 jobs:
   build:
     strategy:
@@ -33,7 +34,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
       - name: Update tag version inside spec file
-        run: sed -i "s/.*%define release_tag.*/%define release_tag ${{ inputs.version }}/" ${{ env.SPEC_FILE }}
+        run: sed -i "s/.*%define release_tag.*/%define release_tag ${{ inputs.version }}/" ${{ env.SPEC }}
       - uses: actions/cache/restore@v4
         id: cache
         with:
@@ -42,25 +43,19 @@ jobs:
           fail-on-cache-miss: true
       - name: Install dependencies
         run: |
-          sudo dnf install -y -q git gcc mold clang-devel rpmdevtools rpmlint fdupes cbindgen diffutils \
-              imake lld mercurial mesa-dri-drivers nasm nodejs rust unzip llvm \
-              llvm-devel yasm zip cargo libdrm-devel libnotify-devel libproxy-devel \
-              python3.11 'pkgconfig(jack)' 'pkgconfig(xt)' 'pkgconfig(gdk-x11-2.0)' \
-              'pkgconfig(glib-2.0)' 'pkgconfig(gobject-2.0)' 'pkgconfig(gtk+-2.0)' \
-              'pkgconfig(gtk+-3.0)' 'pkgconfig(gtk+-unix-print-2.0)' 'pkgconfig(gtk+-unix-print-3.0)' \
-              libcurl-devel 'pkgconfig(libffi)' 'pkgconfig(libpulse)' 'pkgconfig(nspr)' 'pkgconfig(nss)' \
-              alsa-lib-devel 'pkgconfig(gl)'
+          sudo dnf install -y -q rpmdevtools rpmlint fdupes
       - name: Create rpm tree
         run: rpmdev-setuptree
       - name: Move tarball asset to rpm build sources location
-        run: mv ${{ inputs.cache-file-path }} $HOME/rpmbuild/SOURCES/${{ inputs.version }}.tar.gz
+        run: mv ${{ inputs.cache-file-path }} $HOME/rpmbuild/SOURCES/${{ inputs.version }}.tar.bz2
       - name: Move rpm assets to rpmbuild dir
         run: |
-          mv ${{ env.SPEC_FILE }} $HOME/rpmbuild/SPECS/
-          mv ${{ env.VENDOR_FILE }} $HOME/rpmbuild/SOURCES
-          mv ${{ env.DESKTOP_FILE }} $HOME/rpmbuild/SOURCES
-          mv ${{ env.DISTR_FILE }} $HOME/rpmbuild/SOURCES
-          mv ${{ env.RELEASE_TAG }} $HOME/rpmbuild/SOURCES
+          mv ${{ env.SPEC }} $HOME/rpmbuild/SPECS/
+          mv ${{ env.VENDOR }} $HOME/rpmbuild/SOURCES
+          mv ${{ env.DESKTOP }} $HOME/rpmbuild/SOURCES
+          mv ${{ env.DISTR }} $HOME/rpmbuild/SOURCES
+          mv ${{ env.POLICIES }} $HOME/rpmbuild/SOURCES
+          mv ${{ env.APPDATA }} $HOME/rpmbuild/SOURCES
       - name: Build rpm binary package
         run: |
           cd $HOME/rpmbuild
@@ -76,4 +71,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ env.RPM_ASSET }}
-# took 83:26.60 to build - mach build
+

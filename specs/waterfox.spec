@@ -1,11 +1,11 @@
 %define app waterfox
 %define dev BrowserWorks
 %define appdir %{_prefix}/%_lib/%{app}
-%define version 6.6.7
+%define release_tag ${TAG} # this line gets updated automatically by Github Actions
 %define debug_package %{nil}
 
 Name: %{app}
-Version: %{version}
+Version: %{release_tag}
 Release: 1%{?dist}
 Summary: A privacy-focused browser built for power users who value customization and control over their online experience
 Group: System/GUI/Internet
