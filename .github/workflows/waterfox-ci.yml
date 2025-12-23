@@ -32,10 +32,7 @@ jobs:
           test ! -z "$latest_tag" && echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV" \
           || echo "ERROR: Latest tag not found" || exit 1
 
-           # use the tag name but remove the 'v' for the asset name to publish
-          tagname=$(echo $latest_tag | sed 's/v//')
-
-          echo "VERSION=$tagname" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
       - name: Download tag asset
         id: step_get_asset
         run: |
