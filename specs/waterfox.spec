@@ -3,6 +3,7 @@
 %define appdir %{_prefix}/%_lib/%{app}
 %define release_tag ${TAG} # this line gets updated automatically by Github Actions
 %define debug_package %{nil}
+%define github_rpm_src https://raw.githubusercontent.com/DeltaCopy/waterfox-fedora-copr-ci/refs/heads/main/sources
 
 Name: %{app}
 Version: %{release_tag}
@@ -13,14 +14,17 @@ License: MPL-2.0
 
 URL: https://github.com/%{dev}/%{app}
 
-Source0:  https://cdn1.%{app}.net/%{app}/releases/%{version}/Linux_x86_64/%{app}-%{version}.tar.bz2
-Source1: https://raw.githubusercontent.com/DeltaCopy/waterfox-fedora-copr-ci/refs/heads/main/sources/vendor.js
-Source2: https://github.com/DeltaCopy/waterfox-fedora-copr-ci/blob/main/%{app}.desktop
-Source3: https://github.com/DeltaCopy/waterfox-fedora-copr-ci/blob/main/distribution.ini
-Source4: https://github.com/DeltaCopy/waterfox-fedora-copr-ci/blob/main/%{app}-browser.appdata.xml
-Source5: https://github.com/DeltaCopy/waterfox-fedora-copr-ci/blob/main/policies.json
+Source0: https://cdn1.%{app}.net/%{app}/releases/%{version}/Linux_x86_64/%{app}-%{version}.tar.bz2
+Source1: %{github_rpm_src}/vendor.js
+Source2: %{github_rpm_src}/%{app}.desktop
+Source3: %{github_rpm_src}//distribution.ini
+Source4: %{github_rpm_src}/%{app}-browser.appdata.xml
+Source5: %{github_rpm_src}/policies.json
 
 ExclusiveArch: x86_64
+
+BuildRequires: curl
+BuildRequires: coreutils
 
 Obsoletes: %{app} <= %{version}
 
@@ -29,6 +33,13 @@ A privacy-focused browser built for power users who value customization and cont
 
 %prep
 %autosetup -n %{_builddir}/%{app} -p1
+
+for s in vendor.js %{app}.desktop distribution.ini  \
+  %{app}-browser.appdata.xml policies.json SHA256SUMS; do
+  curl -Ls %{github_rpm_src}/$s -o %{_sourcedir}/$s 
+done
+
+cd %{_sourcedir} && sha256sum -c SHA256SUMS && test $? -ne 0 && echo "sha256sum = failed" && exit 1 || echo "sha256sum = ok"
 
 %install
 
@@ -42,14 +53,13 @@ for i in 16 32 48 64 128; do
     %{buildroot}%{_datadir}/icons/hicolor/${i}x${i}/apps/%{app}.png
 done
 
-%{__install} -Dm 644 %{SOURCE2} %{buildroot}%{_datadir}/applications
+%{__install} -Dm 644 %{SOURCE2} %{buildroot}%{_datadir}/applications/%{app}.desktop
 
 %{__install} -Dm 644 %{SOURCE3} %{buildroot}%{appdir}/distribution/distribution.ini
 
 %{__cp} %{app} %{buildroot}%{_bindir}
 
-mkdir -p %{buildroot}%{_datadir}/appdata
-%{__install} -Dm 644 %{SOURCE4} %{buildroot}%{_datadir}/appdata
+%{__install} -Dm 644 %{SOURCE4} %{buildroot}%{_datadir}/appdata/%{app}-browser.appdata.xml
 
 %{__install} -Dm 644 %{SOURCE5} %{buildroot}%{appdir}/distribution/policies.json
 
