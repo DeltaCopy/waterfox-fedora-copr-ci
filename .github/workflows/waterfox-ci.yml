@@ -24,10 +24,8 @@ jobs:
         with:
           repository: ${{ github.repository }}
           sparse-checkout-cone-mode: false
-
       - name: Install dependencies
         run: sudo dnf install -y -q copr-cli python3 git gawk jq
-
       - name: Get latest tag
         run: |
           # get latest release tag from remote
@@ -41,7 +39,6 @@ jobs:
           echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
 
           sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
-
       - name: Update copr-cli configuration
         run: |
           mkdir $HOME/.config
@@ -56,22 +53,27 @@ jobs:
         run: |
           LATEST_COPR=$(copr-cli get-package ${{ env.COPR_USERNAME }}/${{ env.COPR_PROJECT }} --name ${{ env.COPR_PROJECT }} | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj["latest_build"]["source_package"]["version"]);')
 
-          echo "Latest COPR version = ${LATEST_COPR%-*}"
-          echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
-
-          # convert the versions removing the decimal points to ease in comparing them
-
-          copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
-          git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
-
-          if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
-              echo "START_BUILD=true" >> "$GITHUB_ENV"
-              echo "Starting COPR build"
+          if [ -z "$LATEST_COPR" ]; then
+            echo "No latest version available in "$LATEST_COPR"
+            echo "Starting COPR build"
+            echo "START_BUILD=true" >> "$GITHUB_ENV"
           else
-              echo "START_BUILD=false" >> "$GITHUB_ENV"
-              echo "Skipping COPR build"
-          fi
+            echo "Latest COPR version = ${LATEST_COPR%-*}"
+            echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
 
+            # convert the versions removing the decimal points to ease in comparing them
+
+            copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+            git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+
+            if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
+                echo "START_BUILD=true" >> "$GITHUB_ENV"
+                echo "Starting COPR build"
+            else
+                echo "START_BUILD=false" >> "$GITHUB_ENV"
+                echo "Skipping COPR build"
+            fi
+          fi
       - name: Start COPR build
         if: env.START_BUILD == 'true'
         run: |
