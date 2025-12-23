@@ -1,5 +1,5 @@
 # Build Waterfox and publish release
-name: FreeTube Fedora COPR CI
+name: Waterfox Fedora COPR CI
 on: workflow_dispatch
 env:
   COPR_PROJECT: waterfox
