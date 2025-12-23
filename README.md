@@ -1,5 +1,8 @@
 # waterfox-fedora-copr-ci
-RPM build spec for packaging the files from https://cdn1.waterfox.net/releases on the Fedora COPR.
+
+[Waterfox](https://github.com/BrowserWorks/waterfox) is an open-source, privacy-focused browser based on the popular open source browser with a red panda as a mascot. It is designed to be a drop-in replacement for said browser that offers enhanced privacy features, performance improvements, and customizability while maintaining compatibility with existing extensions.
+
+RPM build spec for packaging files from https://cdn1.waterfox.net/releases on the Fedora COPR.
 
 Building from src is a resource intensive process, and as a result this package uses the files from https://cdn.waterfox.com/waterfox/releases/
 
