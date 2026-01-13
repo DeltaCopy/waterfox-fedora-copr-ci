@@ -64,6 +64,9 @@ jobs:
             copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
             git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
 
+            echo $copr_version
+            echo $git_version
+
             if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
                 echo "START_BUILD=true" >> "$GITHUB_ENV"
                 echo "Starting COPR build"
