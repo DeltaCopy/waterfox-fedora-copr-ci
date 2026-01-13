@@ -18,6 +18,9 @@ jobs:
   waterfox-copr-ci:
     runs-on: ubuntu-latest
     container: fedora:latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout local
         uses: actions/checkout@v4.2.0
