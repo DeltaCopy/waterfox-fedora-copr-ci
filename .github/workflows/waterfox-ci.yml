@@ -37,8 +37,11 @@ jobs:
           || echo "ERROR: Latest tag not found" || exit 1
 
           echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
-
           sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
+
+          echo "Print spec file"
+          cat ${{ env.SPEC }}
+
       - name: Update copr-cli configuration
         run: |
           mkdir $HOME/.config
