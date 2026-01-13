@@ -56,7 +56,7 @@ jobs:
           echo "Latest COPR version = ${LATEST_COPR%-*}"
           echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
 
-          if [ -z "${LATEST_COPR%-*}" ]; then
+          if [ ! -z "${LATEST_COPR%-*}" ]; then
             echo "Latest COPR version = ${LATEST_COPR%-*}"
             echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
 
