@@ -9,7 +9,7 @@ env:
   COPR_URL: https://copr.fedorainfracloud.org
   REPO_DEV: BrowserWorks
   REPO_NAME: waterfox
-  RELEASES_CDN: https://cdn1.waterfox.com/waterfox/releases/${version}/Linux_x86_64/waterfox-${version}.tar.bz2
+  RELEASES_CDN: https://cdn.waterfox.com/waterfox/releases/${version}/Linux_x86_64/waterfox-${version}.tar.bz2
   SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
   VENDOR: $GITHUB_WORKSPACE/vendor.js
   DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
