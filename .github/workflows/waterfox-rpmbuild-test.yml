@@ -88,11 +88,11 @@ jobs:
           echo "rpm_file = $rpm_file"
           source /etc/os-release
           echo "Version ID = $VERSION_ID"
-          publish_filename=$GITHUB_WORKSPACE/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
-          mv $rpm_file $publish_filename
+          publish_filename=waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
+          mv $rpm_file $GITHUB_WORKSPACE/$publish_filename
           echo "ARTIFACT=$publish_filename" >> "$GITHUB_ENV"
 
-          if [ -f "$publish_filename" ]; then
+          if [ -f "$GITHUB_WORKSPACE/$publish_filename" ]; then
             echo "### RPM build generated :rocket:" >> $GITHUB_STEP_SUMMARY
           else
             echo "### RPM build failed :x:" >> $GITHUB_STEP_SUMMARY
