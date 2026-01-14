@@ -88,17 +88,18 @@ jobs:
           echo "rpm_file = $rpm_file"
           source /etc/os-release
           echo "Version ID = $VERSION_ID"
-          mv $rpm_file $HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
-          echo "RPM_ASSET=$HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm" >> "$GITHUB_ENV"
+          publish_filename=$GITHUB_WORKSPACE/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
+          mv $rpm_file $publish_filename
+          echo "ARTIFACT=$publish_filename" >> "$GITHUB_ENV"
 
-          if [ -f "$rpm_file"]; then
-             echo "### RPM build generated :rocket:" >> $GITHUB_STEP_SUMMARY
+          if [ -f "$publish_filename" ]; then
+            echo "### RPM build generated :rocket:" >> $GITHUB_STEP_SUMMARY
           else
             echo "### RPM build failed :x:" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ env.RPM_ASSET }}
-          path: ${{ env.RPM_ASSET }}
+          name: ${{ env.ARTIFACT }}
+          path: ${{ env.ARTIFACT }}
           retention-days: 1
