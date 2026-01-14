@@ -65,6 +65,14 @@ done
 
 %{__cp} -r %{_builddir}/%{app} %{buildroot}/%{_libdir}
 
+# Fix execute permissions for binaries
+chmod +x %{buildroot}%{appdir}/%{app}
+chmod +x %{buildroot}%{appdir}/%{app}-bin
+chmod +x %{buildroot}%{appdir}/vaapitest
+chmod +x %{buildroot}%{appdir}/updater
+chmod +x %{buildroot}%{appdir}/glxtest
+chmod +x %{buildroot}%{appdir}/precomplete
+
 # Backwards compatibility symlinks
 ln -Tsrf %{_libdir}/%{app}/%{app} %{buildroot}/%{_bindir}/%{app}-g
 
