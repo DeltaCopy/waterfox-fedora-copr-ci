@@ -90,8 +90,15 @@ jobs:
           echo "Version ID = $VERSION_ID"
           mv $rpm_file $HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
           echo "RPM_ASSET=$HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm" >> "$GITHUB_ENV"
-      - name: Release
-        uses: softprops/action-gh-release@v2.0.8
-        if: startsWith(github.ref, 'refs/tags/')
+
+          if [ -f "$rpm_file"]; then
+             echo "### RPM build generated :rocket:" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### RPM build failed :x:" >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
         with:
-          files: ${{ env.RPM_ASSET }}
+          name: ${{ env.RPM_ASSET }}
+          path: ${{ env.RPM_ASSET }}
+          retention-days: 1
