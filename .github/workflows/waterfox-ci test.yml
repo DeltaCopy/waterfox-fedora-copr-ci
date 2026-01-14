@@ -76,8 +76,8 @@ jobs:
       - name: Download source tarball asset and move to rpm build sources location
         run: |
           version="${{ env.LATEST_TAG }}"
-          echo "Using release CDN = echo $RELEASES_CDN | sed -e 's/version/'${version}'/' -e 's/version/'${version}'/'"
-          curl -LO --output-dir /tmp $(echo $RELEASES_CDN | sed -e 's/version/'${version}'/' -e 's/version/'${version}'/')
+          echo "Using release CDN = $(echo $RELEASES_CDN | sed -e 's/version/'${version}'/' -e 's/version/'${version}'/')"
+          curl -LO --output-dir $HOME/rpmbuild/SOURCES  $(echo $RELEASES_CDN | sed -e 's/version/'${version}'/' -e 's/version/'${version}'/')
       - name: Move rpm specfile to specs
         run: mv ${{ env.SPEC }} $HOME/rpmbuild/SPECS/
       - name: Testing RPM build
