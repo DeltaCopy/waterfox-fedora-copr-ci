@@ -78,7 +78,7 @@ jobs:
           version="${{ env.LATEST_TAG }}"
           curl -LO --output-dir $HOME/rpmbuild/SOURCES/ $RELEASES_CDN
       - name: Move rpm specfile to specs
-        run: mv ${{ env.SPEC_FILE }} $HOME/rpmbuild/SPECS/
+        run: mv ${{ env.SPEC }} $HOME/rpmbuild/SPECS/
       - name: Testing RPM build
         run: |
           echo "Starting RPM build"
