@@ -14,7 +14,7 @@ License: MPL-2.0
 
 URL: https://github.com/%{dev}/%{app}
 
-Source0: https://cdn1.%{app}.net/%{app}/releases/%{version}/Linux_x86_64/%{app}-%{version}.tar.bz2
+Source0: https://cdn.%{app}.com/%{app}/releases/%{version}/Linux_x86_64/%{app}-%{version}.tar.bz2
 Source1: %{github_rpm_src}/vendor.js
 Source2: %{github_rpm_src}/%{app}.desktop
 Source3: %{github_rpm_src}/distribution.ini
