@@ -1,7 +1,8 @@
 %define app waterfox
 %define dev BrowserWorks
 %define appdir %{_prefix}/%_lib/%{app}
-%define release_tag ${TAG} # this line gets updated automatically by Github Actions
+# This line gets updated automatically by Github Actions
+%define release_tag ${TAG}
 %define debug_package %{nil}
 %define github_rpm_src https://raw.githubusercontent.com/DeltaCopy/waterfox-fedora-copr-ci/refs/heads/main/sources
 
@@ -64,6 +65,14 @@ done
 %{__install} -Dm 644 %{SOURCE5} %{buildroot}%{appdir}/distribution/policies.json
 
 %{__cp} -r %{_builddir}/%{app} %{buildroot}/%{_libdir}
+
+# Fix execute permissions for binaries
+chmod +x %{buildroot}%{appdir}/waterfox
+chmod +x %{buildroot}%{appdir}/waterfox-bin
+chmod +x %{buildroot}%{appdir}/vaapitest
+chmod +x %{buildroot}%{appdir}/update
+chmod +x %{buildroot}%{appdir}/glxtest
+chmod +x %{buildroot}%{appdir}/precomplete
 
 # Backwards compatibility symlinks
 ln -Tsrf %{_libdir}/%{app}/%{app} %{buildroot}/%{_bindir}/%{app}-g
