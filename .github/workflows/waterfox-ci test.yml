@@ -1,0 +1,96 @@
+# Build Waterfox and publish release
+name: Waterfox Fedora COPR CI Test
+on: workflow_dispatch
+env:
+  COPR_PROJECT: waterfox
+  COPR_USERNAME: deltacopy
+  COPR_URL: https://copr.fedorainfracloud.org
+  REPO_DEV: BrowserWorks
+  REPO_NAME: waterfox
+  RELEASES_CDN: https://cdn1.waterfox.net/waterfox/releases/${version}/Linux_x86_64/waterfox-${version}.tar.bz2
+  SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
+  VENDOR: $GITHUB_WORKSPACE/vendor.js
+  DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
+  DISTR: $GITHUB_WORKSPACE/distribution.ini
+  POLICIES: $GITHUB_WORKSPACE/policies.json
+  APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
+jobs:
+  waterfox-copr-ci:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Checkout local
+        uses: actions/checkout@v4.2.0
+        with:
+          repository: ${{ github.repository }}
+          sparse-checkout-cone-mode: false
+      - name: Install dependencies
+        run: sudo dnf install -y -q copr-cli python3 git gawk jq rpmdevtools rpmlint curl
+      - name: Get latest tag
+        run: |
+          # get latest release tag from remote
+
+          latest_tag=$(curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name')
+
+          echo "INFO: Latest tag = $latest_tag"
+          test ! -z "$latest_tag" && echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV" \
+          || echo "ERROR: Latest tag not found" || exit 1
+
+          sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
+
+          echo "Print spec file"
+          cat ${{ env.SPEC }}
+
+      - name: Update copr-cli configuration
+        run: |
+          mkdir $HOME/.config
+          cat <<EOF > $HOME/.config/copr
+          [copr-cli]
+          login = ${{ secrets.COPR_BUILD_L }}
+          username = ${{ env.COPR_USERNAME }}
+          token = ${{ secrets.COPR_BUILD_T }}
+          copr_url = ${{ env.COPR_URL }}
+          EOF
+      - name: Get latest COPR build information
+        id: step_latest_copr_build
+        run: |
+          LATEST_COPR=$(copr-cli get-package ${{ env.COPR_USERNAME }}/${{ env.COPR_PROJECT }} --name ${{ env.COPR_PROJECT }} | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj["latest_build"]["source_package"]["version"]);')
+
+          if [ ! -z "${LATEST_COPR%-*}" ]; then
+            echo "Latest COPR version = ${LATEST_COPR%-*}"
+            echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
+
+            # convert the versions removing the decimal points to ease in comparing them
+
+            copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+            git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+
+            if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
+                echo "COPR build is required"
+            else
+                echo "Skipping COPR build, versions match"
+            fi
+          fi
+      - name: Create rpm tree
+        run: rpmdev-setuptree
+      - name: Download source tarball asset and move to rpm build sources location
+        run: |
+          version="${{ env.LATEST_TAG }}"
+          curl -LO --output-dir $HOME/rpmbuild/SOURCES/ $RELEASES_CDN
+      - name: Move rpm specfile to specs
+        run: mv ${{ env.SPEC_FILE }} $HOME/rpmbuild/SPECS/
+      - name: Testing RPM build
+        run: |
+          echo "Starting RPM build"
+          cd $HOME/rpmbuild/SPECS; rpmbuild -bb waterfox.spec
+          rpm_file=$(find $HOME/rpmbuild/RPMS/x86_64 -name "*.rpm*" ! -name "*src*" ! -name "*debug*")
+          echo "rpm_file = $rpm_file"
+          source /etc/os-release
+          echo "Version ID = $VERSION_ID"
+          mv $rpm_file $HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm
+          echo "RPM_ASSET=$HOME/rpmbuild/RPMS/x86_64/waterfox-testbuild-${{ env.LATEST_TAG }}.fc$VERSION_ID.x86_64.rpm" >> "$GITHUB_ENV"
+      - name: Release
+        uses: softprops/action-gh-release@v2.0.8
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ env.RPM_ASSET }}
