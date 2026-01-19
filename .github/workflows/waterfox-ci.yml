@@ -1,8 +1,6 @@
 # Build Waterfox and publish release
 name: Waterfox Fedora COPR CI
-on:
-  schedule:
-    - cron: "0 00 * * *" # At 00:00 daily
+on: workflow_dispatch
 env:
   COPR_PROJECT: waterfox
   COPR_USERNAME: deltacopy
