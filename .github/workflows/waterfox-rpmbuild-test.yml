@@ -94,12 +94,23 @@ jobs:
 
           if [ -f "$GITHUB_WORKSPACE/$publish_filename" ]; then
             echo "### RPM build generated :rocket:" >> $GITHUB_STEP_SUMMARY
+
+            echo "Starting install"
+            dnf in "$GITHUB_WORKSPACE/$publish_filename" -y
+
+            if [ $? -eq 0 ]; then
+              echo "Install completed"
+              waterfox -V
+              ls -lart /usr/lib64/waterfox
+            else
+              echo "Install failed"
+            fi
           else
             echo "### RPM build failed :x:" >> $GITHUB_STEP_SUMMARY
           fi
-      - name: Upload artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.ARTIFACT }}
-          path: ${{ env.ARTIFACT }}
-          retention-days: 1
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v5
+      #   with:
+      #     name: ${{ env.ARTIFACT }}
+      #     path: ${{ env.ARTIFACT }}
+      #     retention-days: 1
