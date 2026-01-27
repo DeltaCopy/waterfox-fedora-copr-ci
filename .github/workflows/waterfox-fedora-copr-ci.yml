@@ -1,0 +1,83 @@
+# Build Waterfox and publish release
+name: Waterfox Fedora COPR CI
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 00 * * *" # At 00:00 daily
+env:
+  COPR_PROJECT: waterfox
+  COPR_USERNAME: deltacopy
+  COPR_URL: https://copr.fedorainfracloud.org
+  REPO_DEV: BrowserWorks
+  REPO_NAME: waterfox
+  SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
+  VENDOR: $GITHUB_WORKSPACE/vendor.js
+  DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
+  DISTR: $GITHUB_WORKSPACE/distribution.ini
+  POLICIES: $GITHUB_WORKSPACE/policies.json
+  APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
+jobs:
+  waterfox-copr-ci:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Checkout local
+        uses: actions/checkout@v4.2.0
+        with:
+          repository: ${{ github.repository }}
+          sparse-checkout-cone-mode: false
+      - name: Install dependencies
+        run: sudo dnf install -y -q copr-cli python3 git gawk jq
+      - name: Get latest tag
+        run: |
+          # get latest release tag from remote
+
+          latest_tag=$(curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name')
+
+          echo "INFO: Latest tag = $latest_tag"
+          test ! -z "$latest_tag" && echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV" \
+          || echo "ERROR: Latest tag not found" || exit 1
+
+          echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
+          sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
+
+          echo "Print spec file"
+          cat ${{ env.SPEC }}
+
+      - name: Update copr-cli configuration
+        run: |
+          mkdir $HOME/.config
+          cat <<EOF > $HOME/.config/copr
+          [copr-cli]
+          login = ${{ secrets.COPR_BUILD_L }}
+          username = ${{ env.COPR_USERNAME }}
+          token = ${{ secrets.COPR_BUILD_T }}
+          copr_url = ${{ env.COPR_URL }}
+          EOF
+      - name: Get latest COPR build information
+        id: step_latest_copr_build
+        run: |
+          LATEST_COPR=$(copr-cli get-package ${{ env.COPR_USERNAME }}/${{ env.COPR_PROJECT }} --name ${{ env.COPR_PROJECT }} | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj["latest_build"]["source_package"]["version"]);')
+
+          if [ ! -z "${LATEST_COPR%-*}" ]; then
+            echo "Latest COPR version = ${LATEST_COPR%-*}"
+            echo "Latest Git tag release = ${{ env.LATEST_TAG }}"
+
+            # convert the versions removing the decimal points to ease in comparing them
+
+            copr_version=$(echo "${LATEST_COPR%-*}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+            git_version=$(echo "${{ env.LATEST_TAG }}" | awk -F. '{printf "%03d%03d%03d\n", $1, $2, $3}')
+
+            if [[ $copr_version < $git_version ]] || [[ -z "$LATEST_COPR" ]]; then
+                echo "START_BUILD=true" >> "$GITHUB_ENV"
+                echo "Starting COPR build"
+            else
+                echo "START_BUILD=false" >> "$GITHUB_ENV"
+                echo "Skipping COPR build"
+            fi
+          fi
+      - name: Start COPR build
+        if: env.START_BUILD == 'true'
+        run: |
+          echo "Starting COPR build"
+          copr-cli build ${{ env.COPR_PROJECT }} ${{ env.SPEC }}
