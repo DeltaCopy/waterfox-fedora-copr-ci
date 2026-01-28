@@ -23,6 +23,10 @@ sudo dnf copr enable deltacopy/waterfox
 sudo dnf in waterfox
 </pre>
 
+# Default search engine
+
+Changed from Startpage to use DuckDuckGo
+
 <h3> COPR build status </h3> 
 
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox/package/waterfox/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox/package/waterfox/)
