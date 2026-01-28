@@ -39,3 +39,9 @@ pref("spellchecker.dictionary_path", "/usr/share/hunspell");
 
 // Use LANG environment variable to choose locale
 pref("intl.locale.requested", "");
+
+// DuckDuckGo default search
+pref("browser.urlbar.placeholderName", "DuckDuckGo");
+
+// DuckDuckGo default search
+pref("browser.search.defaultenginename", "DuckDuckGo");
