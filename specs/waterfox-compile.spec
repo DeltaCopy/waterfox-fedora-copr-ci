@@ -12,7 +12,6 @@ Name: %{app}
 Version: %{release_tag}
 Release: 1%{?dist}
 Summary: A privacy-focused browser built for power users who value customization and control over their online experience
-Group: System/GUI/Internet
 License: MPL-2.0
 
 URL: %{github_repo}
