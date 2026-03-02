@@ -30,8 +30,6 @@ jobs:
       run: |
         # get latest release tag from remote
 
-          curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name'
-
           latest_release_tag=$(curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name')
 
           echo "INFO: Latest tag = $latest_release_tag"
