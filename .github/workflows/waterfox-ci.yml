@@ -1,8 +1,6 @@
 # Build Waterfox and publish release
 name: Waterfox Fedora COPR CI
-on:
-  schedule:
-    - cron: "0 00 * * *" # At 00:00 daily
+on: workflow_dispatch
 env:
   COPR_PROJECT: waterfox
   COPR_USERNAME: deltacopy
@@ -16,12 +14,93 @@ env:
   POLICIES: $GITHUB_WORKSPACE/policies.json
   APPDATA: $GITHUB_WORKSPACE/waterfox-browser.appdata.xml
 jobs:
-  waterfox-copr-ci:
+  GetLatestVersion:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.step_version.outputs.VERSION }}
+    steps:
+    - name: Install jq
+      run: sudo apt-get update -y && sudo apt-get install -y jq
+    - name: Get latest version
+      id: step_version
+      run: |
+        # get latest release tag from remote
+
+          curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name'
+
+          latest_release_tag=$(curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name')
+
+          echo "INFO: Latest tag = $latest_release_tag"
+
+          if [ ! -z $latest_release_tag ]; then
+            latest_tag=$(echo $latest_release_tag | sed 's/v//')
+            echo "VERSION=${latest_release_tag}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Latest tag is unknown"
+            exit 1
+          fi
+    - name: Checkout local
+      uses: actions/checkout@v6.0.2
+      with:
+        repository: ${{ github.repository }}
+
+    - name: Update README
+      run: |
+        echo ${{ steps.step_version.outputs.VERSION }}
+        cat << EOF > README.md
+          # waterfox-fedora-copr-ci
+
+          [Waterfox](https://github.com/BrowserWorks/waterfox) is an open-source, privacy-focused browser based on the popular open source browser with a red panda as a mascot. It is designed to be a drop-in replacement for said browser that offers enhanced privacy features, performance improvements, and customizability while maintaining compatibility with existing extensions.
+
+          Building from src is a resource intensive process, and as a result this package uses the release tarball from https://cdn.waterfox.com/waterfox/releases/
+
+          A GitHub actions workflow is scheduled to run daily at 12AM to check the latest version released from https://github.com/BrowserWorks/waterfox
+
+          The COPR project repository is available from: https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox
+
+          ## Active releases available
+
+          - Fedora 42
+          - Fedora 43
+          - Fedora rawhide
+
+          # Instructions
+
+          Enable the COPR repository then install the package.
+
+          <pre>
+          sudo dnf copr enable deltacopy/waterfox
+          sudo dnf in waterfox
+          </pre>
+
+          # Default search engine
+
+          Changed from Startpage to use DuckDuckGo
+
+          <h3> COPR build status </h3> 
+
+          [![Copr build status](https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox/package/waterfox/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox/package/waterfox/)
+
+          <h3> GitHub action workflow status </h3> 
+
+          [![Waterfox Fedora COPR CI](https://github.com/DeltaCopy/waterfox-fedora-copr-ci/actions/workflows/waterfox-ci.yml/badge.svg)](https://github.com/DeltaCopy/waterfox-fedora-copr-ci/actions/workflows/waterfox-ci.yml)
+
+
+          ## Latest version
+          ${{ steps.step_version.outputs.VERSION }}
+        EOF
+        git config --global user.name $GIT_USER
+        git config --global user.email $GIT_EMAIL
+        git add README.md
+        git commit --allow-empty -m "[Darkly AUR CI]: Update version"
+
+  UpdateCOPR:
+    needs: GetLatestVersion
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
       - name: Checkout local
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v6.0.2
         with:
           repository: ${{ github.repository }}
           sparse-checkout-cone-mode: false
@@ -29,15 +108,12 @@ jobs:
         run: sudo dnf install -y -q copr-cli python3 git gawk jq
       - name: Get latest tag
         run: |
-          # get latest release tag from remote
+         echo ${{ needs.GetLatestVersion.outputs.VERSION }}
 
-          latest_tag=$(curl -s https://api.github.com/repos/$REPO_DEV/$REPO_NAME/releases/latest |  jq -r '.tag_name')
-
-          echo "INFO: Latest tag = $latest_tag"
+          latest_tag=$(echo ${{ needs.GetLatestVersion.outputs.VERSION }}| sed 's/v//')
           test ! -z "$latest_tag" && echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV" \
           || echo "ERROR: Latest tag not found" || exit 1
 
-          echo "VERSION=$latest_tag" >> "$GITHUB_OUTPUT"
           sed -i "s/.*%define release_tag.*/%define release_tag ${latest_tag}/" ${{ env.SPEC }}
 
           echo "Print spec file"
