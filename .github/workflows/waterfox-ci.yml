@@ -87,7 +87,7 @@ jobs:
 
 
           ## Latest version
-          ${{ steps.step_version.outputs.VERSION }}
+          v${{ steps.step_version.outputs.VERSION }}
         EOF
         git config --global user.name $GIT_USER
         git config --global user.email $GIT_EMAIL
@@ -108,7 +108,7 @@ jobs:
         run: sudo dnf install -y -q copr-cli python3 git gawk jq
       - name: Get latest tag
         run: |
-         echo ${{ needs.GetLatestVersion.outputs.VERSION }}
+          echo ${{ needs.GetLatestVersion.outputs.VERSION }}
 
           latest_tag=$(echo ${{ needs.GetLatestVersion.outputs.VERSION }}| sed 's/v//')
           test ! -z "$latest_tag" && echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV" \
