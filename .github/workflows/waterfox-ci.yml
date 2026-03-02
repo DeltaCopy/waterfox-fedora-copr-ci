@@ -7,6 +7,8 @@ env:
   COPR_URL: https://copr.fedorainfracloud.org
   REPO_DEV: BrowserWorks
   REPO_NAME: waterfox
+  GIT_USER: DeltaCopy
+  GIT_EMAIL: ecto1@duck.com
   SPEC: $GITHUB_WORKSPACE/specs/waterfox.spec
   VENDOR: $GITHUB_WORKSPACE/vendor.js
   DESKTOP: $GITHUB_WORKSPACE/waterfox.desktop
