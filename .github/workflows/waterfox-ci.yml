@@ -94,9 +94,10 @@ jobs:
         git config --global user.name $GIT_USER
         git config --global user.email $GIT_EMAIL
         git add README.md
+        git commit --allow-empty -m "[Waterfox Fedora COPR CI]: Update version"
         git commit --allow-empty -m "[Darkly AUR CI]: Update version"
-
-  UpdateCOPR:
+        git push --force -v
+  UpdateFedoraCOPR:
     needs: GetLatestVersion
     runs-on: ubuntu-latest
     container: fedora:latest
