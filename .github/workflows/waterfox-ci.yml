@@ -89,7 +89,7 @@ jobs:
 
 
           ## Latest version
-          v${{ steps.step_version.outputs.VERSION }}
+          <img src="https://img.shields.io/badge/waterfox-${{ steps.step_version.outputs.VERSION }}-orange" alt="waterfox-${{ steps.step_version.outputs.VERSION }}">
         EOF
         git config --global user.name $GIT_USER
         git config --global user.email $GIT_EMAIL
