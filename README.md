@@ -37,4 +37,4 @@
 
 
   ## Latest version
-  v6.6.9
+  <img src="https://img.shields.io/badge/waterfox-6.6.9-orange" alt="waterfox-6.6.9">
