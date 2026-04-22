@@ -37,4 +37,4 @@
 
 
   ## Latest version
-  <img src="https://img.shields.io/badge/waterfox-6.6.11-orange" alt="waterfox-6.6.11">
+  <img src="https://img.shields.io/badge/waterfox-6.6.12-orange" alt="waterfox-6.6.12">
