@@ -8,12 +8,6 @@
 
   The COPR project repository is available from: https://copr.fedorainfracloud.org/coprs/deltacopy/waterfox
 
-  ## Active releases available
-
-  - Fedora 42
-  - Fedora 43
-  - Fedora rawhide
-
   # Instructions
 
   Enable the COPR repository then install the package.
@@ -37,4 +31,6 @@
 
 
   ## Latest version
-  <img src="https://img.shields.io/badge/waterfox-6.6.12-orange" alt="waterfox-6.6.12">
+    <a href="https://github.com/BrowserWorks/waterfox/releases">
+      <img src="https://img.shields.io/badge/waterfox-6.6.12-orange" alt="waterfox-6.6.12">
+    </a>
