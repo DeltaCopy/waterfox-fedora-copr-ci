@@ -43,7 +43,7 @@ cd %{_sourcedir} && sha256sum -c SHA256SUMS && test $? -ne 0 && echo "sha256sum 
 %install
 
 # builds are failing due to #17, so skip rpath validation on standard/invalid rpaths
-QA_RPATHS=$[ 0x0001|0x0002 ]
+export QA_RPATHS=$[ 0x0001|0x0002 ]
 
 mkdir -p %{buildroot}%{_bindir}
 
