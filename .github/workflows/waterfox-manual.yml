@@ -1,5 +1,5 @@
 # Build Waterfox and publish release
-name: Waterfox Fedora COPR CI
+name: Waterfox Fedora COPR CI Manual
 on: workflow_dispatch
 env:
   COPR_PROJECT: waterfox
