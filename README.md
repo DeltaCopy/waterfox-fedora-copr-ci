@@ -31,5 +31,5 @@
 
   ## Latest version
   <a href="https://github.com/BrowserWorks/waterfox/releases">
-    <img src="https://img.shields.io/badge/waterfox-6.7.0-orange" alt="waterfox-6.7.0">
+    <img src="https://img.shields.io/badge/waterfox-6.7.1.1-orange" alt="waterfox-6.7.1.1">
   </a>
